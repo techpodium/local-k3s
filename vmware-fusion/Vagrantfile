@@ -1,0 +1,59 @@
+k3s_cluster = {
+  "server" => {
+    "k3s-server" => { :ip => "192.168.18.21", :cpus => 2, :mem => 2048 },
+  },
+  "node" => {
+    "k3s-node-1" => { :ip => "192.168.18.22", :cpus => 1, :mem => 1024 }
+  }
+}
+
+server_setup = <<-'SCRIPT'
+server_ip=$1
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san=${server_ip}" sh -
+cat /var/lib/rancher/k3s/server/node-token > ./k3s/node-token.txt
+SCRIPT
+
+node_setup = <<-'SCRIPT'
+server_ip=$1
+curl -sfL https://get.k3s.io | K3S_URL=https://$server_ip:6443 K3S_TOKEN=$(cat ./k3s/node-token.txt) sh -
+SCRIPT
+
+VAGRANTFILE_API_VERSION = "2"
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  k3s_cluster.each do |node_type, nodes|
+    nodes.each do |hostname, info|
+      config.vm.define hostname do |node|
+
+        config.vm.synced_folder "./../../local-k3s", "/home/vagrant/k3s", owner: "vagrant", group: "vagrant"
+
+        # Provider config
+        node.vm.provider "vmware_fusion" do |v|
+          v.allowlist_verified = true
+          v.gui = false
+          v.vmx["memsize"] = info[:mem]
+          v.vmx["numvcpus"] = info[:cpu]
+        end
+
+        node.vm.box = "bento/ubuntu-22.04-arm64"
+        node.vm.hostname = "#{hostname}"
+        node.ssh.insert_key = true
+
+        # Network config
+        node.vm.network :private_network, ip: info[:ip]
+
+        node.vm.provision "shell" do |s|
+          s.privileged = true
+          if node_type == "server"
+            s.inline = server_setup
+          else
+            s.inline = node_setup
+          end
+          s.args = "#{k3s_cluster['server']['k3s-server'][:ip]}"
+        end
+      end
+    end
+  end
+
+  # for slow laptops
+  config.vm.boot_timeout = 600
+end
