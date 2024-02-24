@@ -29,7 +29,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Provider config
         node.vm.provider "virtualbox" do |v|
           v.memory = info[:mem]
-          v.cpus = info[:cpu]
+          v.cpus = info[:cpus]
           v.customize ["modifyvm", :id, "--nictype1", "virtio"]
         end
 
