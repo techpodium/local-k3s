@@ -31,7 +31,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           v.allowlist_verified = true
           v.gui = false
           v.vmx["memsize"] = info[:mem]
-          v.vmx["numvcpus"] = info[:cpu]
+          v.vmx["numvcpus"] = info[:cpus]
         end
 
         node.vm.box = "generic/debian12"
