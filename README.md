@@ -9,3 +9,22 @@ K3s is a lightweight Kubernetes distribution created by Rancher Labs, and it is 
 - Once done, use `vagrant up` command to create the VMs and configure the K3s into them
 
 - SSH into the master node using `vagrant ssh k3s-server` and use `sudo kubectl get nodes` to view the nodes. And your local Kubernetes cluster is ready to use
+
+
+### Manual Installation
+- On Master node (you need IP address of master node):
+```
+server_ip=
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san=${server_ip} --node-ip=${server_ip}" sh -
+```
+
+- Get token from Master node to join worker: `sudo cat /var/lib/rancher/k3s/server/node-token`
+
+- On Worker nodes (you need IP address of Master and Worker node and token):
+```
+server_ip=
+node_ip=
+token=
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent" sh -s - --server https://${server_ip}:6443 --token $token --node-ip ${node_ip}
+```

@@ -1,21 +1,24 @@
 k3s_cluster = {
   "server" => {
-    "k3s-server" => { :ip => "192.168.18.21", :cpus => 2, :mem => 2048 },
+    "k3s-server" => { :ip => "192.168.56.21", :cpus => 2, :mem => 2048 },
   },
   "node" => {
-    "k3s-node-1" => { :ip => "192.168.18.22", :cpus => 1, :mem => 1024 }
+    "k3s-node-1" => { :ip => "192.168.56.22", :cpus => 1, :mem => 1024 }
   }
 }
 
 server_setup = <<-'SCRIPT'
 server_ip=$1
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san=${server_ip}" sh -
+echo "Server-ip: ${server_ip}"
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san=${server_ip} --flannel-iface=eth1" sh -
 cat /var/lib/rancher/k3s/server/node-token > ./k3s/node-token.txt
 SCRIPT
 
 node_setup = <<-'SCRIPT'
 server_ip=$1
-curl -sfL https://get.k3s.io | K3S_URL=https://$server_ip:6443 K3S_TOKEN=$(cat ./k3s/node-token.txt) sh -
+node_ip=$2
+echo "Server IP: ${server_ip} and Connecting Node: ${node_ip}"
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent" sh -s - --server https://${server_ip}:6443 --token $(cat ./k3s/node-token.txt) --flannel-iface=eth1
 SCRIPT
 
 VAGRANTFILE_API_VERSION = "2"
@@ -35,7 +38,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         node.vm.box = "generic/debian12"
         node.vm.hostname = "#{hostname}"
-        node.ssh.insert_key = false
+        node.ssh.insert_key = true
 
         # Network config
         node.vm.network :private_network, ip: info[:ip]
@@ -47,7 +50,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           else
             s.inline = node_setup
           end
-          s.args = "#{k3s_cluster['server']['k3s-server'][:ip]}"
+          s.args = [ "#{k3s_cluster['server']['k3s-server'][:ip]}", "#{k3s_cluster[node_type][hostname][:ip]}", ]
         end
       end
     end
