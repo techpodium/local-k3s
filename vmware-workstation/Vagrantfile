@@ -12,6 +12,8 @@ server_ip=$1
 echo "Server-ip: ${server_ip}"
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san=${server_ip} --flannel-iface=eth1" sh -
 cat /var/lib/rancher/k3s/server/node-token > ./k3s/node-token.txt
+cp /etc/rancher/k3s/k3s.yaml ./k3s/kube-config
+sed -i s/127.0.0.1/$server_ip/g ./k3s/kube-config
 SCRIPT
 
 node_setup = <<-'SCRIPT'
