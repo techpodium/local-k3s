@@ -35,9 +35,11 @@ case "$(uname -sr)" in
 esac
 
 if [ -f ~/.kube/config ]; then
-    echo -e "\nKubectl config file exist in ~/.kube/. Creating backup for exiting file"
-    cp ~/.kube/config ~/.kube/config.bak-$(date +"%Y-%m-%d-%H-%M-%S")
+    bak_config_file="config.bak-$(date +"%Y-%m-%d-%H-%M-%S")"
+    echo -e "\nKubectl config file exist in ~/.kube/ directory. Creating backup file '${bak_config_file}' for exiting config file into ~/.kube/ directory"
+    cp ~/.kube/config ~/.kube/${bak_config_file}
 fi
+echo -e "\nUpdating Kubectl config file for your K3s cluster..."
 cp ../kube-config ~/.kube/config
 
 echo -e "\n\n######### Your K3s cluster is ready. Use 'kubectl' commands to deploy your application\n"
