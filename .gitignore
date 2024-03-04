@@ -1,0 +1,5 @@
+.vagrant
+.DS_Store
+*.box
+kube-config
+node-token.txt

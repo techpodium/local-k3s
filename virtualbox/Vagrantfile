@@ -38,7 +38,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         node.vm.box = "generic/debian12"
         node.vm.hostname = "#{hostname}"
-        node.ssh.insert_key = true
+        node.ssh.insert_key = false
 
         # Network config
         node.vm.network :private_network, ip: info[:ip]

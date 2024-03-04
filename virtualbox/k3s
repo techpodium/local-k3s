@@ -1,0 +1,11 @@
+#!/bin/bash
+
+case "$@" in
+    destroy|halt|ssh*|status)
+    vagrant "$@"
+    ;;
+    *)
+    vagrant "$@"
+    bash ../install_kubectl.sh
+    ;;
+esac
