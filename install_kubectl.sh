@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! $(which kubectl) ];then
+if [[ ! $(which kubectl) ]]; then
     echo -e "Kubectl is not installed, installing Kubectl...\n"
     arch=$(arch)
     case "$(uname -sr)" in
