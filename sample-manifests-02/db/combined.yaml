@@ -1,0 +1,89 @@
+### Create Namespace named db
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wp-database-configmap
+  labels:
+    app: db
+    env: dev
+    stack: wordpress
+data:
+  APP_ENV: "dev"
+  MYSQL_DATABASE: "wordpress"
+  MYSQL_USER: "wordpress"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wp-database-secret
+type: Opaque
+data:
+  MARIADB_ROOT_PASSWORD: d29yZHByZXNzCg==
+  MYSQL_PASSWORD: d29yZHByZXNzCg==
+  MYSQL_ROOT_PASSWORD: d29yZHByZXNzCg==
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-database
+  labels:
+    app: db
+    env: dev
+    stack: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: db
+      env: dev
+      stack: wordpress
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: db
+        env: dev
+        stack: wordpress
+    spec:
+      containers:
+      - name: wp-database
+        image: msalim22/wpdb:v2
+        imagePullPolicy: Always
+        envFrom:
+          - configMapRef:
+              name: wp-database-configmap
+              optional: false
+          - secretRef:
+              name: wp-database-secret
+              optional: false
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: wp-database-volume
+          mountPath: /var/lib/mysql       # Path inside container
+      volumes:
+      - name: wp-database-volume
+        hostPath:
+          path: /var/lib/wp-data     # Path in host machine
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wp-database
+  labels:
+    app: db
+    env: dev
+    stack: wordpress
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3306            # the port on which the service is listening
+    protocol: TCP
+    targetPort: 3306      # the port exposed by Pod (we defined in the deployment as part of `containerPort)
+  selector:
+    app: db
+    env: dev
+    stack: wordpress       # Pod label that service is using to select Pods
