@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wp-database
+  name: wp-database-deployment
   labels:
     app: db
     env: dev
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: wp-database
-        image: msalim22/wpdb:v1
+        image: msalim22/wpdb:v2
         imagePullPolicy: Always
         envFrom:
           - configMapRef:

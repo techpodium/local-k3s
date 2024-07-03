@@ -9,6 +9,6 @@ metadata:
     stack: wordpress
 data:
   APP_ENV: "dev"
-  WORDPRESS_DB_HOST: "wp-database.db.svc.cluster.local"
+  WORDPRESS_DB_HOST: "wp-database-service.wpdb.svc.cluster.local"
   WORDPRESS_DB_NAME: "wordpress"
   WORDPRESS_DB_USER: "wordpress"

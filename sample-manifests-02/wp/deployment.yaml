@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wp-app
+  name: wp-app-deployment
   labels:
     app: wp-app
     env: dev

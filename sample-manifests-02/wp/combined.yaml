@@ -10,7 +10,7 @@ metadata:
     stack: wordpress
 data:
   APP_ENV: "dev"
-  WORDPRESS_DB_HOST: "wp-database.db.svc.cluster.local"
+  WORDPRESS_DB_HOST: "wp-database-service.wpdb.svc.cluster.local"
   WORDPRESS_DB_NAME: "wordpress"
   WORDPRESS_DB_USER: "wordpress"
 
@@ -27,7 +27,7 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wp-app
+  name: wp-app-deployment
   labels:
     app: wp-app
     env: dev
@@ -64,7 +64,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: wp-app
+  name: wp-app-service
   labels:
     app: wp-app
     env: dev
