@@ -3,3 +3,5 @@
 *.box
 kube-config
 node-token.txt
+*.dec.yaml
+# *.enc.yaml
