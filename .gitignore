@@ -4,4 +4,7 @@
 kube-config
 node-token.txt
 *.dec.yaml
+<<<<<<< Updated upstream
 # *.enc.yaml
+=======
+>>>>>>> Stashed changes
