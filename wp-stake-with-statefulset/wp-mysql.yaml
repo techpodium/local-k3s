@@ -1,0 +1,137 @@
+### Using StatefulSet within same Namespace (pod-to-pod communcationv via service name)
+### Purpose: StatefulSet is used to manage stateful applications, where each pod needs to be uniquely identifiable and maintain a persistent state across restarts. Examples include databases like MySQL, PostgreSQL, Kafka, or applications that require stable, consistent network identifiers, persistent storage, and ordered deployment and scaling.
+### Pod Identity: StatefulSet assigns each pod a stable and unique identity (name and ordinal number, such as pod-name-0, pod-name-1), which persists through pod restarts.
+### Scaling: When scaling a StatefulSet, the pods are created one at a time in a specific order (from 0 upwards). Similarly, when scaling down, they are terminated in reverse order (from the highest ordinal downwards).
+### Networking: StatefulSet gives each pod a stable network identity (DNS name), which helps maintain a constant reference point even when pods are moved or restarted.
+
+### To connect to a StatefulSet from another application in Kubernetes, you typically need to:
+### - Expose the StatefulSet via a ClusterIP type Service to load balance the traffic or a Headless Service for direct pod-to-pod communication without load balance
+### - Access the StatefulSet Pods using their stable network identities provided by the StatefulSet (say my-db-statefulset-0.my-statefulset-service.default.svc.cluster.local on default namespace)
+
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: configmap-wp
+# data:
+#   MYSQL_USER: wordpress
+#   MYSQL_DATABASE: wp_db
+#   WORDPRESS_DB_HOST: "mysql"
+#   WORDPRESS_DB_USER: wordpress
+#   WORDPRESS_DB_NAME: wp_db
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-wp
+type: Opaque
+data:
+  MYSQL_PASSWORD: cGFzc3dvcmQ=
+  WORDPRESS_DB_PASSWORD: cGFzc3dvcmQ=
+  MYSQL_ROOT_PASSWORD: cm9vdDEyMw==
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: "mysql"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          env:
+            - name: MYSQL_USER
+              value: wordpress
+            - name: MYSQL_DATABASE
+              value: wp_db
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-wp
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-wp
+                  key: MYSQL_ROOT_PASSWORD
+          ports:
+            - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - name: wordpress
+          image: wordpress
+          ports:
+            - containerPort: 80
+          # envFrom:
+          # - configMapRef:
+          #     name: configmap-wp
+          #     optional: false
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mysql                ### Within same namespace you can use service name for pod-to-pod communication with load balancing
+              # value: mysql-0.mysql.wp-mysql.svc.cluster.local           ### You can use unique pod identity on wp-mysql namespace for example
+            - name: WORDPRESS_DB_USER
+              value: wordpress
+            - name: WORDPRESS_DB_NAME
+              value: wp_db
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-wp
+                  key: WORDPRESS_DB_PASSWORD
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    app: wordpress
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80
+      nodePort: 30002
+  type: NodePort

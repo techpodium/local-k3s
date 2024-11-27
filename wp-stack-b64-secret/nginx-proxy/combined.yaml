@@ -1,0 +1,90 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: wpproxy
+  name: proxy-configmap
+data:
+  default.conf: |
+    server {
+      listen 80;
+      location / {
+        proxy_pass http://wp-app-service.wpapp.svc.cluster.local:80;
+
+        ### Using $http_host instead of $host to preserve the port in the host URL when response come back from Wordpress Apache server
+        ### If you use nodePort type service in a local cluster to expose nginx-proxy, you need this config
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Host $host;
+      }
+    }
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: wpproxy
+  name: wp-nginx-deployment
+  labels:
+    app: wp-nginx
+    env: dev
+    stack: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wp-nginx
+      env: dev
+      stack: wordpress
+  replicas: 1
+  template:
+    metadata:
+      namespace: wpproxy
+      labels:
+        app: wp-nginx
+        env: dev
+        stack: wordpress
+    spec:
+      containers:
+      - name: wp-nginx
+        # image: msalim22/wpproxy:v2
+        image: nginx:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: proxy-config-volume
+            mountPath: /etc/nginx/conf.d/default.conf
+            subPath: default.conf
+      volumes:
+        - name: proxy-config-volume
+          configMap:
+            name: proxy-configmap
+            items:
+              - key: default.conf
+                path: default.conf
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: wpproxy
+  name: wp-nginx-service
+  labels:
+    app: wp-nginx
+    env: dev
+    stack: wordpress
+spec:
+  type: NodePort
+  ports:
+  - port: 80            # the port on which the service is listening
+    protocol: TCP
+    targetPort: 80       # the port exposed by Pod (we defined in the deployment as part of `containerPort)
+    nodePort: 32000
+  selector:
+    app: wp-nginx
+    env: dev
+    stack: wordpress       # Pod label that service is using to select Pods
