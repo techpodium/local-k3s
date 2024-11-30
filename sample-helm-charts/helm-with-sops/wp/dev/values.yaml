@@ -4,6 +4,7 @@ wp:
     app: wp
     env: dev
     stack: wordpress
+    foo: bar
   image:
     repository: msalim22/wp
     tag: v2
@@ -12,6 +13,7 @@ wp:
   configmap:
     ## KEY: "value"
     APP_ENV: "dev"
+    FOO: "bar"
     WORDPRESS_DB_HOST: "wp-database.wpdb.svc.cluster.local"
     WORDPRESS_DB_NAME: "wordpress"
     WORDPRESS_DB_USER: "wordpress"
