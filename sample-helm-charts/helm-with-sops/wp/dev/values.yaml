@@ -6,8 +6,8 @@ wp:
     stack: wordpress
     foo: bar
   image:
-    repository: msalim22/wp
-    tag: v2
+    repository: wordpress
+    tag: latest
     pullPolicy: Always
   replicas: 10
   configmap:
